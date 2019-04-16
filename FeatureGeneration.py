@@ -15,11 +15,26 @@ def EMA(data, n, i,ema1):
 
 
 ### Load the tickers
+a = dict()
+b = dict()
+for tick in ticklist:
+    try:
+        temp = web.get_data_yahoo(tick, start='2000-01-01', end='2000-01-05')
+        a[tick] = temp
+    except:
+        print(tick, 'did not work')
+    try : 
+        temp = web.get_data_yahoo(tick, start='2019-01-01', end='2019-01-01')
+        b[tick] = temp
+    except:
+        print(tick, 'did not work')
+        
+ticklist = set(a.keys()).intersection(set(b.keys()))
 
-ticklist = ['ADS.DE','ALV.DE','BAS.DE','BAYN.DE','BEI.DE','BMW.DE','1COV.DE','CON.DE','DAI.DE','DB1.DE','DBK.DE','DPW.DE',
-            'DTE.DE','EOAN.DE','FME.DE','FRE.DE','HEI.DE','HEN3.DE','IFX.DE','LHA.DE','LIN.DE','MRK.DE','MUV2.DE','RWE.DE',
-            'SAP.DE','SIE.DE','TKA.DE','VNA.DE','VOW3.DE','WDI.DE']
-
+'''
+ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BAYN.DE', 'BEI.DE', 'BMW.DE', 'CON.DE', 'DAI.DE', 'DBK.DE', 'DTE.DE', 'EOAN.DE', 'FME.DE',
+ 'FRE.DE', 'HEI.DE', 'HEN3.DE', 'LHA.DE', 'LIN.DE', 'MRK.DE', 'MUV2.DE', 'RWE.DE', 'SAP.DE', 'SIE.DE', 'TKA.DE', 'VOW3.DE']
+'''
 
 def tick_data(tick, startdate, delta=0.94):
     a = web.get_data_yahoo(tick, start=startdate, end='2019-01-01')
