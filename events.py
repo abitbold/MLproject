@@ -18,3 +18,7 @@ def get_fridays(start='2000-01-01', end='2019-01-01'):
     fridays = np.arange('2000-01-01', '2019-01-01', dtype='datetime64[D]')
     fridays = pd.to_datetime(fridays[np.is_busday(fridays, weekmask=weekmask)])
     return fridays
+
+def get_first_days(start='2000-01-01', end='2019-01-01'):
+    days = pd.date_range(start, end, freq='MS')
+    return days
