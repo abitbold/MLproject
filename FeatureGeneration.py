@@ -21,7 +21,6 @@ ticklist = ['ADS','ALV','BAS','BAYN','BEI','BMW','1COV','CON','DAI','DB1','DBK',
     
 
 
-
 def tick_data(tick, startdate, delta=0.94):
     a = web.get_data_yahoo(tick, start=startdate, end='2019-01-01')
     df = pd.DataFrame(columns = ['EMA10', 'EMA16', 'EMA22', 'SMA10', 'SMA16', 'SMA22', 'Return',
@@ -35,7 +34,7 @@ def tick_data(tick, startdate, delta=0.94):
                                'EMADL10', 'EMAHL10', 'EMAHL16', 'EMAHL22', 'CHV1010', 'CHV1016',
                                'CHV1022', 'FastK12', 'FastD12', 'FastK18', 'SlowK12', 'FastD18',
                                'SlowD12', 'FastK24', 'SlowK18', 'FastD24', 'SlowD18', 'SlowK24',
-                               'SlowD24', 'CHO'], 
+                               'SlowD24', 'CHO','High','Low','Open','Close','Volume','AdjClose'], 
                       index = range(len(a.index)))
 
     df['Date'] = a.index
@@ -249,5 +248,13 @@ def tick_data(tick, startdate, delta=0.94):
     df.loc[:,'RSI14']=100-100/(1+df.loc[:,'SMA14Up'].values/df.loc[:,'SMA14Down'].values)
     df.loc[:,'RSI20']=100-100/(1+df.loc[:,'SMA20Up'].values/df.loc[:,'SMA20Down'].values)
 
+    df.loc[:,'High'] = a.iloc[:,0].values
+    df.loc[:,'Low'] = a.iloc[:,1].values
+    df.loc[:,'Open'] = a.iloc[:,2].values
+    df.loc[:,'Close'] = a.iloc[:,3].values
+    df.loc[:,'Volume'] = a.iloc[:,4].values
+    df.loc[:,'AdjClose'] = a.iloc[:,5].values
+    
     df.to_csv('tickData/'+ tick + str(delta) +'.csv')
+
 
