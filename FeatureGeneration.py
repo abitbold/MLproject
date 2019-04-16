@@ -4,14 +4,31 @@ import pandas_datareader as web
 
 a = web.get_data_yahoo('ADS', start='2019-01-01', end='today')
 
-
-df = pd.DataFrame(columns = ['EMA10','EMA16', 'EMA22', 'SMA10', 'SMA16', 'SMA22', 'Return', 'Variance', 'ValueAtRisk', 'VarScalar',
-                            'SMA20', 'SMA26', 'SMA32', 'Bollu20','Bollu26', 'Bollu32', 'Bolld20', 'Bolld26', 'Bolld32', 'Mom12', 
-                             'Mom18', 'Mom24', 'ACC12', 'ACC18', 'ACC24', 'ROC10', 'ROC16', 'ROC22', 'EMA12', 'EMA18', 'EMA24',
-                            'EMA30', 'MACD1812', 'MACD2412', 'MACD3012'], 
+def SMA(data, n, i): 
+   #data is a series (1 column of the data frame)
+   if i >= n:                                                
+       return data[i-n:i+1].mean()
+   else:
+       return data[0:i+1].mean()
+def EMA(data, n, i,ema1):
+   return data[i]*(2/(n+1))+ema1*(1-2/(n+1)) 
+  
+  df = pd.DataFrame(columns = ['EMA10', 'EMA16', 'EMA22', 'SMA10', 'SMA16', 'SMA22', 'Return',
+                           'Variance', 'ValueAtRisk', 'VarScalar', 'SMA20', 'SMA26', 'SMA32',
+                           'Bollu20', 'Bollu26', 'Bollu32', 'Bolld20', 'Bolld26', 'Bolld32',
+                           'Mom12', 'Mom18', 'Mom24', 'ACC12', 'ACC18', 'ACC24', 'ROC10', 'ROC16',
+                           'ROC22', 'EMA12', 'EMA18', 'EMA24', 'EMA30', 'MACD1812', 'MACD2412',
+                           'MACD3012', 'MACDS18129', 'MACDS24129', 'MACDS30129', 'RSI8', 'RSI14',
+                           'RSI20', 'PriceUp', 'PriceDown', 'SMA8Up', 'SMA8Down', 'SMA14Up',
+                           'SMA14Down', 'SMA20Up', 'SMA20Down', 'Date', 'ADL', 'OBV', 'EMADL3',
+                           'EMADL10', 'EMAHL10', 'EMAHL16', 'EMAHL22', 'CHV1010', 'CHV1016',
+                           'CHV1022', 'FastK12', 'FastD12', 'FastK18', 'SlowK12', 'FastD18',
+                           'SlowD12', 'FastK24', 'SlowK18', 'FastD24', 'SlowD18', 'SlowK24',
+                           'SlowD24', 'CHO'], 
                   index = range(len(a.index)))
 
 df['Date'] = a.index
+
 ### parameters ###
 
 delta = 0.94
@@ -25,6 +42,15 @@ df.loc[0,'EMA18'] = a.iloc[0,5] #regular EMA 18
 df.loc[0,'EMA24'] = a.iloc[0,5] #regular EMA 24
 df.loc[0,'EMA30'] = a.iloc[0,5] #regular EMA 30
 
+### MACD ###
+df.loc[0,'MACD1812'] = 0
+df.loc[0,'MACD2412'] = 0
+df.loc[0,'MACD3012'] = 0
+
+### MACDS ###
+df.loc[0,'MACDS18129'] = 0
+df.loc[0,'MACDS24129'] = 0
+df.loc[0,'MACDS30129'] = 0
 
 ### SMA ###
 df.loc[0,'SMA10'] = a.iloc[0,5]
@@ -35,16 +61,22 @@ df.loc[0,'SMA26'] = a.iloc[0,5]
 df.loc[0,'SMA32'] = a.iloc[0,5]
 
 ### Returns ###
-df.iloc[1:,6] = (a.iloc[1:,5].values-a.iloc[0:-1,5].values)/a.iloc[0:-1,5].values
+df.loc[1:,'Return'] = (a.iloc[1:,5].values-a.iloc[0:-1,5].values)/a.iloc[0:-1,5].values
+
+
+### Price Up/Down Vectors ###
+
+df.loc[1:, 'PriceUp'] = np.where((a.iloc[1:,5].values-a.iloc[0:-1,5].values)>=0,(a.iloc[1:,5].values-a.iloc[0:-1,5].values), np.nan)
+df.loc[1:, 'PriceDown'] = np.where((a.iloc[1:,5].values-a.iloc[0:-1,5].values)<0,-1*(a.iloc[1:,5].values-a.iloc[0:-1,5].values), np.nan)
 
 ### Variance ###
 
-df.iloc[0,7] = np.power(df.iloc[1:32,6].std(),2)
+df.loc[0,'Variance'] = np.power(df.iloc[1:32,6].std(),2) 
 
 ### Value at Risk ###
 
-df.iloc[0,8] = 1.96*np.sqrt(df.iloc[0,7])
-df.iloc[0,9] = 1
+df.loc[0,'ValueAtRisk'] = 1.96*np.sqrt(df.loc[0,'Variance'])
+df.loc[0,'VarScalar'] = 1
 
 ### ADL ###
 df.loc[0,'ADL'] = a.iloc[0,4]*\
@@ -64,6 +96,7 @@ df.loc[0, 'EMAHL16'] = a.iloc[0,0]-a.iloc[0,1]
 df.loc[0, 'EMAHL22'] = a.iloc[0,0]-a.iloc[0,1]
 
 for i in range(1, len(a.index)):
+    
     ### EMA ###
     df.loc[i,'EMA10'] = EMA(a.iloc[:,5].values,10,i,df.loc[i-1,'EMA10'])
     df.loc[i,'EMA16'] = EMA(a.iloc[:,5].values,16,i,df.loc[i-1,'EMA16'])
@@ -73,6 +106,17 @@ for i in range(1, len(a.index)):
     df.loc[i,'EMA24'] = EMA(a.iloc[:,5].values,24,i,df.loc[i-1,'EMA24'])
     df.loc[i,'EMA30'] = EMA(a.iloc[:,5].values,30,i,df.loc[i-1,'EMA30'])
 
+    ### MACD ###
+
+    df.loc[i,'MACD1812'] = df.loc[i,'EMA18'] - df.loc[i,'EMA12']
+    df.loc[i,'MACD2412'] = df.loc[i,'EMA24'] - df.loc[i,'EMA12']
+    df.loc[i,'MACD3012'] = df.loc[i,'EMA30'] - df.loc[i,'EMA12']
+    
+    ### MACDS ###
+    
+    df.loc[i,'MACDS18129'] = EMA(df.loc[0:i+1,'MACD1812'],9,i,df.loc[i-1,'MACDS18129'])
+    df.loc[i,'MACDS24129'] = EMA(df.loc[0:i+1,'MACD2412'],9,i,df.loc[i-1,'MACDS24129'])
+    df.loc[i,'MACDS30129'] = EMA(df.loc[0:i+1,'MACD3012'],9,i,df.loc[i-1,'MACDS30129'])
     
     ### SMA ###
     df.loc[i,'SMA10'] = SMA(a.iloc[:,5].values,10,i) #SMA n=10
@@ -82,15 +126,25 @@ for i in range(1, len(a.index)):
     df.loc[i,'SMA26'] = SMA(a.iloc[:,5].values,26,i) #SMA n=26
     df.loc[i,'SMA32'] = SMA(a.iloc[:,5].values,32,i) #SMA n=32
 
+    ### SMA Price Up/Down Vectors ###
+    df.loc[i,'SMA8Up'] = SMA(df.loc[:,'PriceUp'],8,i) #SMA n=8
+    df.loc[i,'SMA8Down'] = SMA(df.loc[:,'PriceDown'],8,i) #SMA n=8
+    df.loc[i,'SMA14Up'] = SMA(df.loc[:,'PriceUp'],14,i) #SMA n=14
+    df.loc[i,'SMA14Down'] = SMA(df.loc[:,'PriceDown'],14,i) #SMA n=14
+    df.loc[i,'SMA20Up'] = SMA(df.loc[:,'PriceUp'],20,i) #SMA n=20
+    df.loc[i,'SMA20Down'] = SMA(df.loc[:,'PriceDown'],20,i) #SMA n=20
+    
+
     ### Variance ###
-    df.iloc[i,7] = delta*df.iloc[i-1,7]+(1-delta)*np.power(df.iloc[i,6],2)
+    df.loc[i,'Variance'] = delta*df.loc[i-1,'Variance']+(1-delta)*np.power(df.loc[i,'Return'],2)
     
     ### Value at Risk ###
-    if (df.iloc[i,6] < -df.iloc[i-1,8]):
-        df.iloc[i,9] = df.iloc[i-1,9] + 1
+    if (df.loc[i,'Return'] < -df.loc[i-1,'ValueAtRisk']):
+        df.loc[i,'VarScalar'] = df.loc[i-1,'VarScalar'] + 1
     else:
-        df.iloc[i,9] = df.iloc[i-1,9]*delta
-    df.iloc[i,8] = 1.96*df.iloc[i,9]*np.sqrt(df.iloc[i,7]) 
+        df.loc[i,'VarScalar'] = df.loc[i-1,'VarScalar']*delta
+        
+    df.loc[i,'ValueAtRisk'] = 1.96*df.loc[i,'VarScalar']*np.sqrt(df.loc[i,'Variance']) 
     
     ### Bollu/Bolld ###
     if i>=20:
@@ -111,6 +165,7 @@ for i in range(1, len(a.index)):
     else:
         df.loc[i,'Bollu32'] = df.loc[i,'SMA32']+2*a.iloc[0:i+1,5].std()
         df.loc[i,'Bolld32'] = df.loc[i,'SMA32']-2*a.iloc[0:i+1,5].std()
+        
         
     ### ADL ###    
     df.loc[i, 'ADL'] = df.loc[i-1, 'ADL'] + a.iloc[i,4]*\
@@ -159,30 +214,33 @@ for i in range(1, len(a.index)):
     if i >= 21 : df.loc[i,'SlowD12'] = SMA(df.loc[:,'SlowK12'], 3, i)
     if i >= 27: df.loc[i,'SlowD18'] = SMA(df.loc[:,'SlowK12'], 3, i)
     if i >= 33 : df.loc[i,'SlowD24'] = SMA(df.loc[:,'SlowK12'], 3, i)
-        
 
+        
 ### CHO ###
 df.loc[:,'CHO'] = df.loc[:, 'EMADL3'] - df.loc[:, 'EMADL10']
-    
+
 ### Mom ###
+    
 df.loc[12:,'Mom12'] = a.iloc[12:,5].values-a.iloc[0:-12,5].values
 df.loc[18:,'Mom18'] = a.iloc[18:,5].values-a.iloc[0:-18,5].values
 df.loc[24:,'Mom24'] = a.iloc[24:,5].values-a.iloc[0:-24,5].values
 
 ### ACC ###
-df.iloc[13:,22] = df.iloc[13:,19].values-df.iloc[12:-1,19].values # ACC 12
-df.iloc[19:,23] = df.iloc[19:,20].values-df.iloc[18:-1,20].values # ACC 18
-df.iloc[25:,24] = df.iloc[25:,21].values-df.iloc[24:-1,21].values # ACC 24
+
+df.loc[13:,'ACC12'] = df.iloc[13:,19].values-df.iloc[12:-1,19].values # ACC 12
+df.loc[19:,'ACC18'] = df.iloc[19:,20].values-df.iloc[18:-1,20].values # ACC 18
+df.loc[25:,'ACC24'] = df.iloc[25:,21].values-df.iloc[24:-1,21].values # ACC 24
     
 ### ROC ###
 df.loc[10:,'ROC10'] = 100*(a.iloc[10:,5].values-a.iloc[0:-10,5].values)/(a.iloc[0:-10,5].values)
 df.loc[16:,'ROC16'] = 100*(a.iloc[16:,5].values-a.iloc[0:-16,5].values)/(a.iloc[0:-16,5].values)
 df.loc[22:,'ROC22'] = 100*(a.iloc[22:,5].values-a.iloc[0:-22,5].values)/(a.iloc[0:-22,5].values)
 
-### MACD ###
-df.loc[:,'MACD1812'] = df.loc[:,'EMA18'].values - df.loc[:,'EMA12'].values
-df.loc[:,'MACD2412'] = df.loc[:,'EMA24'].values - df.loc[:,'EMA12'].values
-df.loc[:,'MACD3012'] = df.loc[:,'EMA30'].values - df.loc[:,'EMA12'].values
+### RSI ###
+
+df.loc[:,'RSI8']=100-100/(1+df.loc[:,'SMA8Up'].values/df.loc[:,'SMA8Down'].values)
+df.loc[:,'RSI14']=100-100/(1+df.loc[:,'SMA14Up'].values/df.loc[:,'SMA14Down'].values)
+df.loc[:,'RSI20']=100-100/(1+df.loc[:,'SMA20Up'].values/df.loc[:,'SMA20Down'].values)
 
 
 print(df)
