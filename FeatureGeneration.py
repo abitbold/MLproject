@@ -12,8 +12,14 @@ def SMA(data, n, i):
        return data[0:i+1].mean()
 def EMA(data, n, i,ema1):
    return data[i]*(2/(n+1))+ema1*(1-2/(n+1)) 
-  
-  df = pd.DataFrame(columns = ['EMA10', 'EMA16', 'EMA22', 'SMA10', 'SMA16', 'SMA22', 'Return',
+
+
+
+
+
+
+
+df = pd.DataFrame(columns = ['EMA10', 'EMA16', 'EMA22', 'SMA10', 'SMA16', 'SMA22', 'Return',
                            'Variance', 'ValueAtRisk', 'VarScalar', 'SMA20', 'SMA26', 'SMA32',
                            'Bollu20', 'Bollu26', 'Bollu32', 'Bolld20', 'Bolld26', 'Bolld32',
                            'Mom12', 'Mom18', 'Mom24', 'ACC12', 'ACC18', 'ACC24', 'ROC10', 'ROC16',
@@ -187,16 +193,16 @@ for i in range(1, len(a.index)):
     df.loc[i, 'EMAHL16'] = EMA(a.iloc[:,0]-a.iloc[:,1], 16, i, df.loc[i-1,'EMAHL16'])
     df.loc[i, 'EMAHL22'] = EMA(a.iloc[:,0]-a.iloc[:,1], 22, i, df.loc[i-1,'EMAHL22'])
     if i>=10:
-        df.loc[i, 'CHV1010'] = df.loc[i,'EMAHL10']/df.loc[i-10,'EMAHL10']
-        df.loc[i, 'CHV1016'] = df.loc[i,'EMAHL16']/df.loc[i-10,'EMAHL16']
-        df.loc[i, 'CHV1022'] = df.loc[i,'EMAHL22']/df.loc[i-10,'EMAHL22']
+        df.loc[i, 'CHV1010'] = df.loc[i,'EMAHL10']/df.loc[i-10,'EMAHL10']-1
+        df.loc[i, 'CHV1016'] = df.loc[i,'EMAHL16']/df.loc[i-10,'EMAHL16']-1
+        df.loc[i, 'CHV1022'] = df.loc[i,'EMAHL22']/df.loc[i-10,'EMAHL22']-1
         
     ### fast % k ###
-    if i >= 12 : df.loc[i,'FastK12'] = 100*(a.iloc[i,5]-a.iloc[i-12:i+1,1].min())/\
+    if i >= 12 : df.loc[i,'FastK12'] = 100*(a.iloc[i,3]-a.iloc[i-12:i+1,1].min())/\
                                         (a.iloc[i-12:i+1,0].max() - a.iloc[i-12:i+1,1].min())
-    if i >= 18: df.loc[i,'FastK18'] = 100*(a.iloc[i,5]-a.iloc[i-18:i+1,1].min())/\
+    if i >= 18: df.loc[i,'FastK18'] = 100*(a.iloc[i,3]-a.iloc[i-18:i+1,1].min())/\
                                         (a.iloc[i-18:i+1,0].max() - a.iloc[i-18:i+1,1].min())
-    if i >= 24 : df.loc[i,'FastK24'] = 100*(a.iloc[i,5]-a.iloc[i-24:i+1,1].min())/\
+    if i >= 24 : df.loc[i,'FastK24'] = 100*(a.iloc[i,3]-a.iloc[i-24:i+1,1].min())/\
                                         (a.iloc[i-24:i+1,0].max() - a.iloc[i-24:i+1,1].min())
         
     
@@ -243,4 +249,4 @@ df.loc[:,'RSI14']=100-100/(1+df.loc[:,'SMA14Up'].values/df.loc[:,'SMA14Down'].va
 df.loc[:,'RSI20']=100-100/(1+df.loc[:,'SMA20Up'].values/df.loc[:,'SMA20Down'].values)
 
 
-print(df)
+print(df.loc[:,['FastK24','FastK12','FastK18']].min())
