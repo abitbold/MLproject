@@ -16,9 +16,9 @@ def EMA(data, n, i,ema1):
 
 ### Load the tickers
 
-ticklist = ['ADS','ALV','BAS','BAYN','BEI','BMW','1COV','CON','DAI','DB1','DBK','DPW','DTE','EOAN','FME','FRE','HEI',
-            'HEN3','IFX','LHA','LIN','MRK','MUV2','RWE','SAP','SIE','TKA','VNA','VOW3','WDI']
-    
+ticklist = ['ADS.DE','ALV.DE','BAS.DE','BAYN.DE','BEI.DE','BMW.DE','1COV.DE','CON.DE','DAI.DE','DB1.DE','DBK.DE','DPW.DE',
+            'DTE.DE','EOAN.DE','FME.DE','FRE.DE','HEI.DE','HEN3.DE','IFX.DE','LHA.DE','LIN.DE','MRK.DE','MUV2.DE','RWE.DE',
+            'SAP.DE','SIE.DE','TKA.DE','VNA.DE','VOW3.DE','WDI.DE']
 
 
 def tick_data(tick, startdate, delta=0.94):
