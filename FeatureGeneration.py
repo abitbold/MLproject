@@ -4,22 +4,15 @@ import pandas_datareader as web
 
 a = web.get_data_yahoo('ADS', start='2019-01-01', end='today')
 
-def SMA(data, n, i): 
-   #data is a series (1 column of the data frame)
-   if i >= n:                                                
-       return data[i-n:i+1].mean()
-   else:
-       return data[0:i+1].mean()
-def EMA(data, n, i,ema1):
-   return data[i]*(2/(n+1))+ema1*(1-2/(n+1)) 
-  
-  df = pd.DataFrame(columns = ['EMA10','EMA16', 'EMA22', 'SMA10', 'SMA16', 'SMA22', 'Return', 'Variance', 'ValueAtRisk', 'VarScalar',
+df = pd.DataFrame(columns = ['EMA10','EMA16', 'EMA22', 'SMA10', 'SMA16', 'SMA22', 'Return', 'Variance', 'ValueAtRisk', 'VarScalar',
                             'SMA20', 'SMA26', 'SMA32', 'Bollu20','Bollu26', 'Bollu32', 'Bolld20', 'Bolld26', 'Bolld32', 'Mom12', 
                              'Mom18', 'Mom24', 'ACC12', 'ACC18', 'ACC24', 'ROC10', 'ROC16', 'ROC22', 'EMA12', 'EMA18', 'EMA24',
-                            'EMA30', 'MACD1812', 'MACD2412', 'MACD3012'], 
+                            'EMA30', 'MACD1812', 'MACD2412', 'MACD3012', 'MACDS18129', 'MACDS24129', 'MACDS30129', 'RSI8',
+                            'RSI14', 'RSI20'], 
                   index = range(len(a.index)))
 
 df['Date'] = a.index
+
 ### parameters ###
 
 delta = 0.94
@@ -33,6 +26,15 @@ df.loc[0,'EMA18'] = a.iloc[0,5] #regular EMA 18
 df.loc[0,'EMA24'] = a.iloc[0,5] #regular EMA 24
 df.loc[0,'EMA30'] = a.iloc[0,5] #regular EMA 30
 
+### MACD ###
+df.loc[0,'MACD1812'] = 0
+df.loc[0,'MACD2412'] = 0
+df.loc[0,'MACD3012'] = 0
+
+### MACDS ###
+df.loc[0,'MACDS18129'] = 0
+df.loc[0,'MACDS24129'] = 0
+df.loc[0,'MACDS30129'] = 0
 
 ### SMA ###
 df.loc[0,'SMA10'] = a.iloc[0,5]
@@ -55,6 +57,7 @@ df.iloc[0,8] = 1.96*np.sqrt(df.iloc[0,7])
 df.iloc[0,9] = 1
 
 for i in range(1, len(a.index)):
+    
     ### EMA ###
     df.loc[i,'EMA10'] = EMA(a.iloc[:,5].values,10,i,df.loc[i-1,'EMA10'])
     df.loc[i,'EMA16'] = EMA(a.iloc[:,5].values,16,i,df.loc[i-1,'EMA16'])
@@ -64,6 +67,17 @@ for i in range(1, len(a.index)):
     df.loc[i,'EMA24'] = EMA(a.iloc[:,5].values,24,i,df.loc[i-1,'EMA24'])
     df.loc[i,'EMA30'] = EMA(a.iloc[:,5].values,30,i,df.loc[i-1,'EMA30'])
 
+    ### MACD ###
+
+    df.loc[i,'MACD1812'] = df.loc[i,'EMA18'] - df.loc[i,'EMA12']
+    df.loc[i,'MACD2412'] = df.loc[i,'EMA24'] - df.loc[i,'EMA12']
+    df.loc[i,'MACD3012'] = df.loc[i,'EMA30'] - df.loc[i,'EMA12']
+    
+    ### MACDS ###
+    
+    df.loc[i,'MACDS18129'] = EMA(df.loc[0:i+1,'MACD1812'],9,i,df.loc[i-1,'MACDS18129'])
+    df.loc[i,'MACDS24129'] = EMA(df.loc[0:i+1,'MACD2412'],9,i,df.loc[i-1,'MACDS24129'])
+    df.loc[i,'MACDS30129'] = EMA(df.loc[0:i+1,'MACD3012'],9,i,df.loc[i-1,'MACDS30129'])
     
     ### SMA ###
     df.loc[i,'SMA10'] = SMA(a.iloc[:,5].values,10,i) #SMA n=10
@@ -81,6 +95,7 @@ for i in range(1, len(a.index)):
         df.iloc[i,9] = df.iloc[i-1,9] + 1
     else:
         df.iloc[i,9] = df.iloc[i-1,9]*delta
+        
     df.iloc[i,8] = 1.96*df.iloc[i,9]*np.sqrt(df.iloc[i,7]) 
     
     ### Bollu/Bolld ###
@@ -120,10 +135,6 @@ df.loc[10:,'ROC10'] = 100*(a.iloc[10:,5].values-a.iloc[0:-10,5].values)/(a.iloc[
 df.loc[16:,'ROC16'] = 100*(a.iloc[16:,5].values-a.iloc[0:-16,5].values)/(a.iloc[0:-16,5].values)
 df.loc[22:,'ROC22'] = 100*(a.iloc[22:,5].values-a.iloc[0:-22,5].values)/(a.iloc[0:-22,5].values)
 
-### MACD ###
 
-df.loc[:,'MACD1812'] = df.loc[:,'EMA18'].values - df.loc[:,'EMA12'].values
-df.loc[:,'MACD2412'] = df.loc[:,'EMA24'].values - df.loc[:,'EMA12'].values
-df.loc[:,'MACD3012'] = df.loc[:,'EMA30'].values - df.loc[:,'EMA12'].values
 
 print(df)
