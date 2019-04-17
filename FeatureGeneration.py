@@ -44,6 +44,21 @@ ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BAYN.DE', 'BEI.DE', 'BMW.DE', 'CON.DE
  'FRE.DE', 'HEI.DE', 'HEN3.DE', 'LHA.DE', 'LIN.DE', 'MRK.DE', 'MUV2.DE', 'RWE.DE', 'SAP.DE', 'SIE.DE', 'TKA.DE', 'VOW3.DE']
 '''
 
+def tick_data(tick, startdate, delta=0.94):
+    a = web.get_data_yahoo(tick, start=startdate, end='2019-01-01')
+    df = pd.DataFrame(columns = ['EMA10', 'EMA16', 'EMA22', 'SMA10', 'SMA16', 'SMA22', 'Return',
+                               'Variance', 'ValueAtRisk', 'VarScalar', 'SMA20', 'SMA26', 'SMA32',
+                               'Bollu20', 'Bollu26', 'Bollu32', 'Bolld20', 'Bolld26', 'Bolld32',
+                               'Mom12', 'Mom18', 'Mom24', 'ACC12', 'ACC18', 'ACC24', 'ROC10', 'ROC16',
+                               'ROC22', 'EMA12', 'EMA18', 'EMA24', 'EMA30', 'MACD1812', 'MACD2412',
+                               'MACD3012', 'MACDS18129', 'MACDS24129', 'MACDS30129', 'RSI8', 'RSI14',
+                               'RSI20', 'PriceUp', 'PriceDown', 'SMA8Up', 'SMA8Down', 'SMA14Up',
+                               'SMA14Down', 'SMA20Up', 'SMA20Down', 'Date', 'ADL', 'OBV', 'EMADL3',
+                               'EMADL10', 'EMAHL10', 'EMAHL16', 'EMAHL22', 'CHV1010', 'CHV1016',
+                               'CHV1022', 'FastK12', 'FastD12', 'FastK18', 'SlowK12', 'FastD18',
+                               'SlowD12', 'FastK24', 'SlowK18', 'FastD24', 'SlowD18', 'SlowK24',
+                               'SlowD24', 'CHO','High','Low','Open','Close','Volume','AdjClose', 'Ticker'], 
+                      index = range(len(a.index)))
 
     df['Date'] = a.index
 
