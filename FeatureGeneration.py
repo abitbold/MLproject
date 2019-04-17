@@ -13,29 +13,37 @@ def EMA(data, n, i,ema1):
    return data[i]*(2/(n+1))+ema1*(1-2/(n+1)) 
 
 ### Load the tickers
+a = dict()
+b = dict()
 
-ticklist = ['ADS.DE','ALV.DE','BAS.DE','BAYN.DE','BEI.DE','BMW.DE','1COV.DE','CON.DE','DAI.DE','DB1.DE','DBK.DE','DPW.DE',
-            'DTE.DE','EOAN.DE','FME.DE','FRE.DE','HEI.DE','HEN3.DE','IFX.DE','LHA.DE','LIN.DE','MRK.DE','MUV2.DE','RWE.DE',
-            'SAP.DE','SIE.DE','TKA.DE','VNA.DE','VOW3.DE','WDI.DE']
-    
+### These are the current DAX tickers ###
+ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BAYN.DE', 'BEI.DE', 'BMW.DE', 'CON.DE', 'DAI.DE', 'DBK.DE', 'DTE.DE', 'EOAN.DE', 'FME.DE',
+ 'FRE.DE', 'HEI.DE', 'HEN3.DE', 'LHA.DE', 'LIN.DE', 'MRK.DE', 'MUV2.DE', 'RWE.DE', 'SAP.DE', 'SIE.DE', 'TKA.DE', 'VOW3.DE',
+           '1COV.DE', 'DB1.DE', 'DPW.DE', 'IFX.DE', 'VNA.DE', 'WDI.DE']
 
 
+for tick in ticklist:
+    try:
+        temp = web.get_data_yahoo(tick, start='2000-01-01', end='2000-01-05')
+        a[tick] = temp
+    except:
+        print(tick, 'did not work')
+    try : 
+        temp = web.get_data_yahoo(tick, start='2019-01-01', end='2019-01-01')
+        b[tick] = temp
+    except:
+        print(tick, 'did not work')
+        
+ticklist = set(a.keys()).intersection(set(b.keys()))
 
-def tick_data(tick, startdate, delta=0.94):
-    a = web.get_data_yahoo(tick, start=startdate, end='2019-01-01')
-    df = pd.DataFrame(columns = ['EMA10', 'EMA16', 'EMA22', 'SMA10', 'SMA16', 'SMA22', 'Return',
-                               'Variance', 'ValueAtRisk', 'VarScalar', 'SMA20', 'SMA26', 'SMA32',
-                               'Bollu20', 'Bollu26', 'Bollu32', 'Bolld20', 'Bolld26', 'Bolld32',
-                               'Mom12', 'Mom18', 'Mom24', 'ACC12', 'ACC18', 'ACC24', 'ROC10', 'ROC16',
-                               'ROC22', 'EMA12', 'EMA18', 'EMA24', 'EMA30', 'MACD1812', 'MACD2412',
-                               'MACD3012', 'MACDS18129', 'MACDS24129', 'MACDS30129', 'RSI8', 'RSI14',
-                               'RSI20', 'PriceUp', 'PriceDown', 'SMA8Up', 'SMA8Down', 'SMA14Up',
-                               'SMA14Down', 'SMA20Up', 'SMA20Down', 'Date', 'ADL', 'OBV', 'EMADL3',
-                               'EMADL10', 'EMAHL10', 'EMAHL16', 'EMAHL22', 'CHV1010', 'CHV1016',
-                               'CHV1022', 'FastK12', 'FastD12', 'FastK18', 'SlowK12', 'FastD18',
-                               'SlowD12', 'FastK24', 'SlowK18', 'FastD24', 'SlowD18', 'SlowK24',
-                               'SlowD24', 'CHO','High','Low','Open','Close','Volume','AdjClose', 'Ticker'], 
-                      index = range(len(a.index)))
+### These are the DAX tickers that exist today and also existed in 2000 and are the tickers we will be using ###
+'''
+new ticklist:
+
+ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BAYN.DE', 'BEI.DE', 'BMW.DE', 'CON.DE', 'DAI.DE', 'DBK.DE', 'DTE.DE', 'EOAN.DE', 'FME.DE',
+ 'FRE.DE', 'HEI.DE', 'HEN3.DE', 'LHA.DE', 'LIN.DE', 'MRK.DE', 'MUV2.DE', 'RWE.DE', 'SAP.DE', 'SIE.DE', 'TKA.DE', 'VOW3.DE']
+'''
+
 
     df['Date'] = a.index
 
