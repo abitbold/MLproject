@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import pandas_datareader as web
 
-a = web.get_data_yahoo('ADS', start='2019-01-01', end='today')
 
 def SMA(data, n, i): 
    #data is a series (1 column of the data frame)
@@ -13,30 +12,16 @@ def SMA(data, n, i):
 def EMA(data, n, i,ema1):
    return data[i]*(2/(n+1))+ema1*(1-2/(n+1)) 
 
-
 ### Load the tickers
-a = dict()
-b = dict()
-for tick in ticklist:
-    try:
-        temp = web.get_data_yahoo(tick, start='2000-01-01', end='2000-01-05')
-        a[tick] = temp
-    except:
-        print(tick, 'did not work')
-    try : 
-        temp = web.get_data_yahoo(tick, start='2019-01-01', end='2019-01-01')
-        b[tick] = temp
-    except:
-        print(tick, 'did not work')
-        
-ticklist = set(a.keys()).intersection(set(b.keys()))
 
-'''
-ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BAYN.DE', 'BEI.DE', 'BMW.DE', 'CON.DE', 'DAI.DE', 'DBK.DE', 'DTE.DE', 'EOAN.DE', 'FME.DE',
- 'FRE.DE', 'HEI.DE', 'HEN3.DE', 'LHA.DE', 'LIN.DE', 'MRK.DE', 'MUV2.DE', 'RWE.DE', 'SAP.DE', 'SIE.DE', 'TKA.DE', 'VOW3.DE']
-'''
+ticklist = ['ADS.DE','ALV.DE','BAS.DE','BAYN.DE','BEI.DE','BMW.DE','1COV.DE','CON.DE','DAI.DE','DB1.DE','DBK.DE','DPW.DE',
+            'DTE.DE','EOAN.DE','FME.DE','FRE.DE','HEI.DE','HEN3.DE','IFX.DE','LHA.DE','LIN.DE','MRK.DE','MUV2.DE','RWE.DE',
+            'SAP.DE','SIE.DE','TKA.DE','VNA.DE','VOW3.DE','WDI.DE']
+    
 
-def tick_data(tick, startdate, delta=0.94, tocsv=False):
+
+
+def tick_data(tick, startdate, delta=0.94):
     a = web.get_data_yahoo(tick, start=startdate, end='2019-01-01')
     df = pd.DataFrame(columns = ['EMA10', 'EMA16', 'EMA22', 'SMA10', 'SMA16', 'SMA22', 'Return',
                                'Variance', 'ValueAtRisk', 'VarScalar', 'SMA20', 'SMA26', 'SMA32',
@@ -271,7 +256,15 @@ def tick_data(tick, startdate, delta=0.94, tocsv=False):
     df.loc[:,'AdjClose'] = a.iloc[:,5].values
     df.loc[:, 'Ticker'] = tick
     
-    if tocsv: df.to_csv('tickData/'+ tick + str(delta) +'.csv')
+    #df.to_csv('tickData/'+ tick.replace('.', '') + str(delta).replace('.', '') +'.csv')
     return df
 
-
+'''
+for tick in ticklist[0:10]:
+    #tick = 'CON.DE'
+    print('start', tick)
+    df = tick_data(tick, '2018-06-01', 0.94)
+    print(tick, 'done')
+    print()
+    #break
+'''
