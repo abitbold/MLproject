@@ -44,7 +44,7 @@ ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BAYN.DE', 'BEI.DE', 'BMW.DE', 'CON.DE
  'FRE.DE', 'HEI.DE', 'HEN3.DE', 'LHA.DE', 'LIN.DE', 'MRK.DE', 'MUV2.DE', 'RWE.DE', 'SAP.DE', 'SIE.DE', 'TKA.DE', 'VOW3.DE']
 '''
 
-def tick_data(tick, startdate, delta=0.94):
+def tick_data(tick, startdate, delta=0.94, tocsv=False):
     a = web.get_data_yahoo(tick, start=startdate, end='2019-01-01')
     df = pd.DataFrame(columns = ['EMA10', 'EMA16', 'EMA22', 'SMA10', 'SMA16', 'SMA22', 'Return',
                                'Variance', 'ValueAtRisk', 'VarScalar', 'SMA20', 'SMA26', 'SMA32',
@@ -279,7 +279,7 @@ def tick_data(tick, startdate, delta=0.94):
     df.loc[:,'AdjClose'] = a.iloc[:,5].values
     df.loc[:, 'Ticker'] = tick
     
-    #df.to_csv('tickData/'+ tick.replace('.', '') + str(delta).replace('.', '') +'.csv')
+    if tocsv : df.to_csv('tickData/'+ str(delta).replace('.', '') +'/' + tick.replace('.', '') +'.csv')
     return df
 
 '''
