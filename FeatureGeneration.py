@@ -36,7 +36,7 @@ ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BAYN.DE', 'BEI.DE', 'BMW.DE', 'CON.DE
  'FRE.DE', 'HEI.DE', 'HEN3.DE', 'LHA.DE', 'LIN.DE', 'MRK.DE', 'MUV2.DE', 'RWE.DE', 'SAP.DE', 'SIE.DE', 'TKA.DE', 'VOW3.DE']
 '''
 
-def tick_data(tick, startdate, delta=0.94):
+def tick_data(tick, startdate, delta=0.94, tocsv=False):
     a = web.get_data_yahoo(tick, start=startdate, end='2019-01-01')
     df = pd.DataFrame(columns = ['EMA10', 'EMA16', 'EMA22', 'SMA10', 'SMA16', 'SMA22', 'Return',
                                'Variance', 'ValueAtRisk', 'VarScalar', 'SMA20', 'SMA26', 'SMA32',
@@ -49,7 +49,7 @@ def tick_data(tick, startdate, delta=0.94):
                                'EMADL10', 'EMAHL10', 'EMAHL16', 'EMAHL22', 'CHV1010', 'CHV1016',
                                'CHV1022', 'FastK12', 'FastD12', 'FastK18', 'SlowK12', 'FastD18',
                                'SlowD12', 'FastK24', 'SlowK18', 'FastD24', 'SlowD18', 'SlowK24',
-                               'SlowD24', 'CHO','High','Low','Open','Close','Volume','AdjClose'], 
+                               'SlowD24', 'CHO','High','Low','Open','Close','Volume','AdjClose', 'Ticker'], 
                       index = range(len(a.index)))
 
     df['Date'] = a.index
@@ -269,7 +269,9 @@ def tick_data(tick, startdate, delta=0.94):
     df.loc[:,'Close'] = a.iloc[:,3].values
     df.loc[:,'Volume'] = a.iloc[:,4].values
     df.loc[:,'AdjClose'] = a.iloc[:,5].values
+    df.loc[:, 'Ticker'] = tick
     
-    df.to_csv('tickData/'+ tick + str(delta) +'.csv')
+    if tocsv: df.to_csv('tickData/'+ tick + str(delta) +'.csv')
+    return df
 
 
