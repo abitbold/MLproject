@@ -12,37 +12,36 @@ def SMA(data, n, i):
 def EMA(data, n, i,ema1):
    return data[i]*(2/(n+1))+ema1*(1-2/(n+1)) 
 
-### Load the tickers
-a = dict()
-b = dict()
+def update_tickers(ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BAYN.DE', 'BEI.DE', 'BMW.DE', 'CON.DE', 'DAI.DE', 'DBK.DE', 'DTE.DE', 'EOAN.DE', 'FME.DE',
+                              'FRE.DE', 'HEI.DE', 'HEN3.DE', 'LHA.DE', 'LIN.DE', 'MRK.DE', 'MUV2.DE', 'RWE.DE', 'SAP.DE', 'SIE.DE', 'TKA.DE', 'VOW3.DE',
+                              '1COV.DE', 'DB1.DE', 'DPW.DE', 'IFX.DE', 'VNA.DE', 'WDI.DE'], start1='2000-01-01', start2='2019-01-01', end1='2000-01-05', end2='2019-01-01'):
+    ### Load the tickers
+    a = dict()
+    b = dict()
+    
+    for tick in ticklist:
+        try:
+            temp = web.get_data_yahoo(tick, start=start1, end=end1)
+            a[tick] = temp
+        except:
+            print(tick, 'did not work')
+        try : 
+            temp = web.get_data_yahoo(tick, start=start2, end=end2)
+            b[tick] = temp
+        except:
+            print(tick, 'did not work')
+            
+    ticklist = set(a.keys()).intersection(set(b.keys()))
+    
+    ### These are the DAX tickers that exist today and also existed in 2000 and are the tickers we will be using ###
+    '''
+    new ticklist:
+    
+    ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BAYN.DE', 'BEI.DE', 'BMW.DE', 'CON.DE', 'DAI.DE', 'DBK.DE', 'DTE.DE', 'EOAN.DE', 'FME.DE',
+     'FRE.DE', 'HEI.DE', 'HEN3.DE', 'LHA.DE', 'LIN.DE', 'MRK.DE', 'MUV2.DE', 'RWE.DE', 'SAP.DE', 'SIE.DE', 'TKA.DE', 'VOW3.DE']
+    '''
+    return ticklist
 
-### These are the current DAX tickers ###
-ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BAYN.DE', 'BEI.DE', 'BMW.DE', 'CON.DE', 'DAI.DE', 'DBK.DE', 'DTE.DE', 'EOAN.DE', 'FME.DE',
- 'FRE.DE', 'HEI.DE', 'HEN3.DE', 'LHA.DE', 'LIN.DE', 'MRK.DE', 'MUV2.DE', 'RWE.DE', 'SAP.DE', 'SIE.DE', 'TKA.DE', 'VOW3.DE',
-           '1COV.DE', 'DB1.DE', 'DPW.DE', 'IFX.DE', 'VNA.DE', 'WDI.DE']
-
-
-for tick in ticklist:
-    try:
-        temp = web.get_data_yahoo(tick, start='2000-01-01', end='2000-01-05')
-        a[tick] = temp
-    except:
-        print(tick, 'did not work')
-    try : 
-        temp = web.get_data_yahoo(tick, start='2019-01-01', end='2019-01-01')
-        b[tick] = temp
-    except:
-        print(tick, 'did not work')
-        
-ticklist = set(a.keys()).intersection(set(b.keys()))
-
-### These are the DAX tickers that exist today and also existed in 2000 and are the tickers we will be using ###
-'''
-new ticklist:
-
-ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BAYN.DE', 'BEI.DE', 'BMW.DE', 'CON.DE', 'DAI.DE', 'DBK.DE', 'DTE.DE', 'EOAN.DE', 'FME.DE',
- 'FRE.DE', 'HEI.DE', 'HEN3.DE', 'LHA.DE', 'LIN.DE', 'MRK.DE', 'MUV2.DE', 'RWE.DE', 'SAP.DE', 'SIE.DE', 'TKA.DE', 'VOW3.DE']
-'''
 
 def tick_data(tick, startdate, delta=0.94, tocsv=False):
     a = web.get_data_yahoo(tick, start=startdate, end='2019-01-01')
