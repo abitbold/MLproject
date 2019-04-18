@@ -9,10 +9,12 @@ def SMA(data, n, i):
        return data[i-n:i+1].mean()
    else:
        return data[0:i+1].mean()
+   
 def EMA(data, n, i,ema1):
    return data[i]*(2/(n+1))+ema1*(1-2/(n+1)) 
 
-def update_tickers(ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BAYN.DE', 'BEI.DE', 'BMW.DE', 'CON.DE', 'DAI.DE', 'DBK.DE', 'DTE.DE', 'EOAN.DE', 'FME.DE',
+
+def update_tickers(ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BEI.DE', 'BMW.DE', 'CON.DE', 'DAI.DE', 'DBK.DE', 'DTE.DE', 'EOAN.DE', 'FME.DE',
                               'FRE.DE', 'HEI.DE', 'HEN3.DE', 'LHA.DE', 'LIN.DE', 'MRK.DE', 'MUV2.DE', 'RWE.DE', 'SAP.DE', 'SIE.DE', 'TKA.DE', 'VOW3.DE',
                               '1COV.DE', 'DB1.DE', 'DPW.DE', 'IFX.DE', 'VNA.DE', 'WDI.DE'], start1='2000-01-01', start2='2019-01-01', end1='2000-01-05', end2='2019-01-01'):
     ### Load the tickers
@@ -42,9 +44,9 @@ def update_tickers(ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BAYN.DE', 'BEI.DE'
     '''
     return ticklist
 
-
-def tick_data(tick, startdate, delta=0.94, tocsv=False):
-    a = web.get_data_yahoo(tick, start=startdate, end='2019-01-01')
+def tick_data(tick, startdate, enddate, delta=0.94, tocsv=False):
+    a = web.get_data_yahoo(tick, start=startdate, end=enddate)
+    a = a.loc[a.Volume>0,:]
     df = pd.DataFrame(columns = ['EMA10', 'EMA16', 'EMA22', 'SMA10', 'SMA16', 'SMA22', 'Return',
                                'Variance', 'ValueAtRisk', 'VarScalar', 'SMA20', 'SMA26', 'SMA32',
                                'Bollu20', 'Bollu26', 'Bollu32', 'Bolld20', 'Bolld26', 'Bolld32',
@@ -110,6 +112,7 @@ def tick_data(tick, startdate, delta=0.94, tocsv=False):
     df.loc[0,'ADL'] = a.iloc[0,4]*\
                     ((a.iloc[0,3] - a.iloc[0,1])-(a.iloc[0,0]-a.iloc[0,3]))/\
                     (a.iloc[0,0]-a.iloc[0,1])
+    if np.isnan(df.loc[0,'ADL']) : df.loc[0,'ADL']=0
 
     ### OBV ###
     df.loc[0,'OBV'] = a.iloc[0,4]
@@ -124,7 +127,7 @@ def tick_data(tick, startdate, delta=0.94, tocsv=False):
     df.loc[0, 'EMAHL22'] = a.iloc[0,0]-a.iloc[0,1]
 
     for i in range(1, len(a.index)):
-
+        
         ### EMA ###
         df.loc[i,'EMA10'] = EMA(a.iloc[:,5].values,10,i,df.loc[i-1,'EMA10'])
         df.loc[i,'EMA16'] = EMA(a.iloc[:,5].values,16,i,df.loc[i-1,'EMA16'])
@@ -195,11 +198,12 @@ def tick_data(tick, startdate, delta=0.94, tocsv=False):
             df.loc[i,'Bolld32'] = df.loc[i,'SMA32']-2*a.iloc[0:i+1,5].std()
 
 
-        ### ADL ###    
+        ### ADL ###   
         df.loc[i, 'ADL'] = df.loc[i-1, 'ADL'] + a.iloc[i,4]*\
                         ((a.iloc[i,3] - a.iloc[i,1])-(a.iloc[i,0]-a.iloc[i,3]))/\
                         (a.iloc[i,0]-a.iloc[i,1])
-
+        if np.isnan(df.loc[i, 'ADL']) : df.loc[i, 'ADL'] = df.loc[i-1, 'ADL']
+        
         ### OBV ###
         if a.iloc[i,5]-a.iloc[i-1,5]>0:
             df.loc[i, 'OBV'] = df.loc[i-1, 'OBV'] + a.iloc[i,4]
@@ -267,8 +271,18 @@ def tick_data(tick, startdate, delta=0.94, tocsv=False):
     ### RSI ###
 
     df.loc[:,'RSI8']=100-100/(1+df.loc[:,'SMA8Up'].values/df.loc[:,'SMA8Down'].values)
+    df.loc[df.loc[:,'SMA8Down'].isnull(),'RSI8'] = 100
+    df.loc[df.loc[:,'SMA8Up'].isnull(),'RSI8'] = 0
+
     df.loc[:,'RSI14']=100-100/(1+df.loc[:,'SMA14Up'].values/df.loc[:,'SMA14Down'].values)
+    df.loc[df.loc[:,'SMA14Down'].isnull(),'RSI14'] = 100
+    df.loc[df.loc[:,'SMA14Up'].isnull(),'RSI14'] = 0
+
+    
     df.loc[:,'RSI20']=100-100/(1+df.loc[:,'SMA20Up'].values/df.loc[:,'SMA20Down'].values)
+    df.loc[df.loc[:,'SMA20Down'].isnull(),'RSI20'] = 100
+    df.loc[df.loc[:,'SMA20Up'].isnull(),'RSI20'] = 0
+
 
     df.loc[:,'High'] = a.iloc[:,0].values
     df.loc[:,'Low'] = a.iloc[:,1].values
@@ -282,11 +296,12 @@ def tick_data(tick, startdate, delta=0.94, tocsv=False):
     return df
 
 '''
-for tick in ticklist[0:10]:
-    #tick = 'CON.DE'
-    print('start', tick)
-    df = tick_data(tick, '2018-06-01', 0.94)
-    print(tick, 'done')
-    print()
-    #break
+##Code to generate data
+##Folders to create the data must exist - a main folder tickData and then folders for each delta
+for dt in [0.9, 0.91, 0.92, 0.93, 0.94, 0.95,0.96]
+    for tick in ticklist:
+        print('start', tick)
+        df = tick_data(tick, '2000-01-01', 2019-01-01, delta=dt, tocsv=True)
+        print(tick, 'done')
+        print()
 '''
