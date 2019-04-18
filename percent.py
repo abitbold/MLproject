@@ -38,4 +38,4 @@ for d in hol:
 
 rfri = np.array(rfri)
 rhol = np.array(rhol)
-rfirsts=np.array(rfirsts)
+rfirsts=np.array(rfirsts) 
