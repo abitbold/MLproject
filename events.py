@@ -9,6 +9,7 @@ import FeatureGeneration as fg
 #### Code to retrieve holiday outside of week ends ####
 def get_market_holidays(start='2000-01-01', end='2019-01-01'):
     temp = web.get_data_yahoo('^GDAXI', start=start, end=end)
+    temp = temp.loc[temp.Volume>0,:]
     opens=set(temp.index.values)
     opens = pd.to_datetime(list(opens))
     weekmask = [1, 1, 1, 1, 1, 0, 0]
@@ -58,13 +59,12 @@ def get_model_days(start='2000-01-01', end='2019-01-01', tocsv=False):
     dtes.Buy=temp.Buy.unique()
     dtes.Sell = temp.Sell.unique()
     for i in range(len(dtes.index)):
-        if dtes.Buy[i] in holbuy : dtes.Hols[i] = 1
-        else: dtes.Hols[i] = 0
-        if dtes.Buy[i] in fridays : dtes.Fridays[i] = 1
-        else: dtes.Fridays[i] = 0
-        if dtes.Buy[i] in firstsbuy : dtes.Firsts[i] = 1
-        else: dtes.Firsts[i] = 0
-        
+        if dtes.Buy[i] in holbuy : dtes.loc[i,'Hols'] = 1
+        else: dtes.loc[i,'Hols'] = 0
+        if dtes.Buy[i] in fridays : dtes.loc[i,'Fridays'] = 1
+        else: dtes.loc[i,'Fridays'] = 0
+        if dtes.Buy[i] in firstsbuy : dtes.loc[i,'Firsts'] = 1
+        else: dtes.loc[i,'Firsts'] = 0
     if tocsv: dtes.to_csv('trading_days.csv')
     return dtes
 
