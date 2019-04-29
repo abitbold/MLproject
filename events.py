@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import pandas_datareader as web
 from datetime import date
-import holidays as hl
 import datetime as dt
 import FeatureGeneration as fg
 
@@ -39,7 +38,7 @@ def get_random_tickers(n, ticklist):
     return np.random.choice(ticklist, size=n, replace=False)
 
 ### Generate trading days
-def get_model_days(start='2000-01-01', end='2019-01-01', tocsv=False):
+def get_model_days(start='2000-01-01', end='2020-01-01', tocsv=True):
     fridays = get_fridays(start, end)
     firsts = get_first_days(start, end)
     hol = get_market_holidays(start, end)
@@ -55,6 +54,50 @@ def get_model_days(start='2000-01-01', end='2019-01-01', tocsv=False):
               keys=None, levels=None, names=None, verify_integrity=False,
               copy=True)
     temp.columns=['Buy', 'Sell', 'Type']
+    temp.loc[temp.Type=='hol', 'Type'] = 1
+    temp.loc[temp.Type=='firsts', 'Type'] = 2
+    temp.loc[temp.Type=='fridays', 'Type'] = 3
+    temp.reset_index(drop=True, inplace=True)
+    temp.to_csv('trading_days.csv')
+    '''
+    dtes=pd.DataFrame(index=range(len(temp.Buy.unique())), columns=['Buy', 'Sell', 'Hols', 'Firsts', 'Fridays'])
+    dtes.Buy=temp.Buy.unique()
+    dtes.Sell = temp.Sell.unique()
+    for i in range(len(dtes.index)):
+        if dtes.Buy[i] in holbuy : dtes.loc[i,'Hols'] = 1
+        else: dtes.loc[i,'Hols'] = 0
+        if dtes.Buy[i] in fridays : dtes.loc[i,'Fridays'] = 1
+        else: dtes.loc[i,'Fridays'] = 0
+        if dtes.Buy[i] in firstsbuy : dtes.loc[i,'Firsts'] = 1
+        else: dtes.loc[i,'Firsts'] = 0
+    '''
+    if tocsv: temp.to_csv('trading_days.csv')
+    return temp
+
+def get_model_days_2(start='2000-01-01', end='2020-01-01', tocsv=True):
+    fridays = get_fridays(start, end)
+    firsts = get_first_days(start, end)
+    hol = get_market_holidays(start, end)
+    holbuy = hol.map(lambda x : np.busday_offset((x+dt.timedelta(-1)).date(), 0, roll='backward'))
+    holsell = hol.map(lambda x : np.busday_offset((x+dt.timedelta(+2)).date(), 0, roll='forward'))
+    firstsbuy = firsts.map(lambda x : np.busday_offset((x+dt.timedelta(-7)).date(), 0, roll='forward'))
+    firstssell = firsts.map(lambda x : np.busday_offset((x+dt.timedelta(5)).date(), 0, roll='backward'))
+    mondays = fridays.map(lambda x : x + dt.timedelta(+3))
+    df1 = pd.DataFrame([holbuy.values, holsell.values, ['hol']*len(hol)]).transpose()
+    df2 = pd.DataFrame([firstsbuy.values, firstssell.values, ['firsts']*len(firsts)]).transpose()
+    df3 = pd.DataFrame([fridays.values, mondays.values, ['fridays']*len(fridays)]).transpose()
+    temp = pd.concat([df1, df2, df3], axis=0, join='outer', join_axes=None, ignore_index=True,
+              keys=None, levels=None, names=None, verify_integrity=False,
+              copy=True)
+    
+    temp.columns=['Buy', 'Sell', 'Type']
+    temp.loc[temp.Type=='hol', 'Type'] = 1
+    temp.loc[temp.Type=='firsts', 'Type'] = 2
+    temp.loc[temp.Type=='fridays', 'Type'] = 3
+    temp.reset_index(drop=True, inplace=True)
+    temp.to_csv('trading_days.csv')
+    '''
+    
     dtes=pd.DataFrame(index=range(len(temp.Buy.unique())), columns=['Buy', 'Sell', 'Hols', 'Firsts', 'Fridays'])
     dtes.Buy=temp.Buy.unique()
     dtes.Sell = temp.Sell.unique()
@@ -66,5 +109,5 @@ def get_model_days(start='2000-01-01', end='2019-01-01', tocsv=False):
         if dtes.Buy[i] in firstsbuy : dtes.loc[i,'Firsts'] = 1
         else: dtes.loc[i,'Firsts'] = 0
     if tocsv: dtes.to_csv('trading_days.csv')
-    return dtes
-
+    '''
+    return temp
