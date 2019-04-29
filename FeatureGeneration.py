@@ -44,9 +44,18 @@ def update_tickers(ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BEI.DE', 'BMW.DE',
     '''
     return ticklist
 
-def tick_data(tick, startdate, enddate, delta=0.94, tocsv=False):
+def tick_data(tick, startdate, enddate, delta=0.94, tocsv=False, norm=False):
     a = web.get_data_yahoo(tick, start=startdate, end=enddate)
+    a.iloc[:,5] = a.iloc[:,3]
     a = a.loc[a.Volume>0,:]
+    b=a.copy()
+    if norm:
+        m = 100/a.iloc[0,2]
+        a.iloc[:,0] = a.iloc[:,0]*m
+        a.iloc[:,1] = a.iloc[:,1]*m
+        a.iloc[:,2] = a.iloc[:,2]*m
+        a.iloc[:,3] = a.iloc[:,3]*m
+        a.iloc[:,5] = a.iloc[:,5]*m
     df = pd.DataFrame(columns = ['EMA10', 'EMA16', 'EMA22', 'SMA10', 'SMA16', 'SMA22', 'Return',
                                'Variance', 'ValueAtRisk', 'VarScalar', 'SMA20', 'SMA26', 'SMA32',
                                'Bollu20', 'Bollu26', 'Bollu32', 'Bolld20', 'Bolld26', 'Bolld32',
@@ -95,7 +104,6 @@ def tick_data(tick, startdate, enddate, delta=0.94, tocsv=False):
 
 
     ### Price Up/Down Vectors ###
-
     df.loc[1:, 'PriceUp'] = np.where((a.iloc[1:,5].values-a.iloc[0:-1,5].values)>=0,(a.iloc[1:,5].values-a.iloc[0:-1,5].values), np.nan)
     df.loc[1:, 'PriceDown'] = np.where((a.iloc[1:,5].values-a.iloc[0:-1,5].values)<0,-1*(a.iloc[1:,5].values-a.iloc[0:-1,5].values), np.nan)
 
@@ -203,6 +211,7 @@ def tick_data(tick, startdate, enddate, delta=0.94, tocsv=False):
                         ((a.iloc[i,3] - a.iloc[i,1])-(a.iloc[i,0]-a.iloc[i,3]))/\
                         (a.iloc[i,0]-a.iloc[i,1])
         if np.isnan(df.loc[i, 'ADL']) : df.loc[i, 'ADL'] = df.loc[i-1, 'ADL']
+        if a.iloc[i,0] == a.iloc[i,1] : df.loc[i, 'ADL'] = df.loc[i-1, 'ADL']
         
         ### OBV ###
         if a.iloc[i,5]-a.iloc[i-1,5]>0:
@@ -284,24 +293,37 @@ def tick_data(tick, startdate, enddate, delta=0.94, tocsv=False):
     df.loc[df.loc[:,'SMA20Up'].isnull(),'RSI20'] = 0
 
 
-    df.loc[:,'High'] = a.iloc[:,0].values
-    df.loc[:,'Low'] = a.iloc[:,1].values
-    df.loc[:,'Open'] = a.iloc[:,2].values
-    df.loc[:,'Close'] = a.iloc[:,3].values
-    df.loc[:,'Volume'] = a.iloc[:,4].values
-    df.loc[:,'AdjClose'] = a.iloc[:,5].values
+    df.loc[:,'High'] = b.iloc[:,0].values
+    df.loc[:,'Low'] = b.iloc[:,1].values
+    df.loc[:,'Open'] = b.iloc[:,2].values
+    df.loc[:,'Close'] = b.iloc[:,3].values
+    df.loc[:,'Volume'] = b.iloc[:,4].values
+    df.loc[:,'AdjClose'] = b.iloc[:,5].values
     df.loc[:, 'Ticker'] = tick
+    if norm:
+        df.loc[:,'Norm_High'] = a.iloc[:,0].values
+        df.loc[:,'Norm_Low'] = a.iloc[:,1].values
+        df.loc[:,'Norm_Open'] = a.iloc[:,2].values
+        df.loc[:,'Norm_Close'] = a.iloc[:,3].values
+        df.loc[:,'Norm_AdjClose'] = a.iloc[:,5].values
     
-    if tocsv : df.to_csv('tickData/'+ str(delta).replace('.', '') +'/' + tick.replace('.', '') +'.csv')
+    if tocsv : 
+        if norm: df.to_csv('tickDataNorm/'+ str(delta).replace('.', '') +'/' + tick.replace('.', '') +'.csv')
+        else: df.to_csv('tickData/'+ str(delta).replace('.', '') +'/' + tick.replace('.', '') +'.csv')
     return df
 
-'''
-##Code to generate data
-##Folders to create the data must exist - a main folder tickData and then folders for each delta
-for dt in [0.9, 0.91, 0.92, 0.93, 0.94, 0.95,0.96]
-    for tick in ticklist:
-        print('start', tick)
-        df = tick_data(tick, '2000-01-01', 2019-01-01, delta=dt, tocsv=True)
-        print(tick, 'done')
-        print()
-'''
+
+
+if __name__ == '__main__':
+    ##Code to generate data
+    ##Folders to create the data must exist - a main folder tickData and then folders for each delta
+    ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BEI.DE', 'BMW.DE', 'CON.DE', 'DAI.DE', 'DBK.DE', 'DTE.DE', 'EOAN.DE', 'FME.DE',
+     'FRE.DE', 'HEI.DE', 'HEN3.DE', 'LHA.DE', 'LIN.DE', 'MRK.DE', 'MUV2.DE', 'RWE.DE', 'SAP.DE', 'SIE.DE', 'TKA.DE', 'VOW3.DE']    
+    
+    for dt in [0.9, 0.91, 0.92, 0.93, 0.94, 0.95,0.96]:
+        for tick in ticklist:
+            print('start', tick)
+            tick_data(tick, '2000-01-01', '2020-01-01', delta=dt, tocsv=True, norm=True)
+            print(tick, 'done')
+            print()
+
