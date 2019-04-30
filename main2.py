@@ -6,24 +6,22 @@ Created on Wed Apr 17 01:34:11 2019
 
 import numpy as np
 import pandas as pd
-import events as eve
 import datetime as dt
 import pandas_datareader as web
 from sklearn.ensemble import RandomForestRegressor
-import FeatureGeneration as fg
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 
 #def main():
 ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BEI.DE', 'BMW.DE', 'CON.DE', 'DAI.DE', 'DBK.DE', 'DTE.DE', 'EOAN.DE', 'FME.DE',
  'FRE.DE', 'HEI.DE', 'HEN3.DE', 'LHA.DE', 'LIN.DE', 'MRK.DE', 'MUV2.DE', 'RWE.DE', 'SAP.DE', 'SIE.DE', 'TKA.DE', 'VOW3.DE']
-ticklist =  ['BMW.DE', 'CON.DE', 'DAI.DE', 'DBK.DE', 'DTE.DE', 'EOAN.DE', 'FME.DE','FRE.DE', 'HEI.DE']
+ticklist =  ['BMW.DE', 'CON.DE', 'DAI.DE', 'DBK.DE', 'DTE.DE', 'EOAN.DE']
 
 #parameters : 
 delta=0.94
-d0 = '2001-01-01'
-d1 = '2008-01-01'
-d2 = '2010-01-01'
+d0 = '2002-01-01'
+d1 = '2004-01-01'
+d2 = '2005-01-01'
 d3 = '2013-01-01'
 
 norm=True
@@ -141,7 +139,7 @@ for i in range(1, 300):
     oob.append(1 - rf.oob_score_)
     xa.append(i)
 plt.scatter(xa, oob)
---> 100 tress seem enough
+#--> 100 tress seem enough
 '''
 
     
@@ -150,7 +148,7 @@ plt.scatter(xa, oob)
 nfeatures=len(Xtrain1.columns)
 rmse = []
 colsrmse =[]
-rf = RandomForestRegressor(n_estimators=200, max_features=None).fit(Xtrain1, Ytrain1)
+rf = RandomForestRegressor(n_estimators=100, max_features=None).fit(Xtrain1, Ytrain1)
 df2 = pd.DataFrame(index=Xtrain1.columns, columns=['rankval'])
 df2.rankval = rf.feature_importances_
 df2.sort_values(by='rankval', inplace=True, ascending=False)
@@ -171,7 +169,7 @@ cols = df2.index.values[df2.index!=df2.index[-1]]
 for i in range(1,len(df2.index)):
     Xtemp = Xtrain1.loc[:,cols]
     CL.append(cols)
-    rf = RandomForestRegressor(n_estimators=200, max_features=None).fit(Xtemp, Ytrain1)
+    rf = RandomForestRegressor(n_estimators=100, max_features=None).fit(Xtemp, Ytrain1)
     df2 = pd.DataFrame(index=Xtemp.columns, columns=['rankval'])
     df2.rankval = rf.feature_importances_
     df2.sort_values(by='rankval', inplace=True, ascending=False)
@@ -182,7 +180,9 @@ for i in range(1,len(df2.index)):
     cols = df2.index.values[df2.index!=df2.index[-1]]
     
 plt.scatter(range(len(rmse)), np.array(rmse[::-1]))
-
+plt.title('RMSE versus number of features')
+plt.xlabel('Number of features')
+plt.ylabel('RMSE')
 plt.show()
 #Gives features we use
 colused = CL[::-1][np.argmin(rmse[::-1][10:30])+10]
@@ -196,9 +196,9 @@ rfL = []
 dtlist = X.index.unique().sort_values()
 first_day= dtlist[0]
 d = first_day+dt.timedelta(50)
+rfonerandomforest = RandomForestRegressor(n_estimators=200, max_features=None).fit(X.loc[((X.index>=pd.to_datetime(d0)) & (X.index < pd.to_datetime(d1))),colused],X.loc[((X.index>=pd.to_datetime(d0)) & (X.index < pd.to_datetime(d1))),'Y'])
 
-
-while d < pd.to_datetime(d1):
+while d < pd.to_datetime(d2):
     X50_train = X.loc[((X.index>=d+dt.timedelta(-50)) & (X.index<d)),colused]
     Y50_train = X.loc[((X.index>=d+dt.timedelta(-50)) & (X.index<d)),'Y']
     rf = RandomForestRegressor(n_estimators=200, max_features=None).fit(X50_train, Y50_train)
@@ -339,21 +339,29 @@ plt.show()
 
 
 #Weights2
-lbd = 0.85
-def calc_ki (lbd, ki1, rmsei):
-    return lbd/rmsei + (1-lbd)*ki1
+lbd = 0.70
+lbd2 = 0.7
+def calc_ki (lbd, ki1, ri):
+    #return lbd*ri*100 + (1-lbd)*ki1
+    return lbd/np.sqrt(ri) + (1-lbd)*ki1
 
 w = np.zeros(len(rfL))
-k = np.array([0.0]*len(rfL))
-r = np.array([0.0]*len(rfL))
-c = np.array([0.0]*len(rfL))
-mn = np.array([0]*len(rfL))
+k = np.zeros(len(rfL))
+r = np.zeros(len(rfL))
+c = np.zeros(len(rfL))
+mn = np.zeros(len(rfL))
+rmse = np.ones(len(rfL))
 mn[0]=1
 w0= []
 w1= []
 w2= []
 w3= []
 w4= []
+w5 = []
+w6= []
+w7= []
+w8= []
+w9 = []
 
 nrf=0
 feats = colused
@@ -361,13 +369,22 @@ d = dtlist[dtlist>=rfL[0][0]][0]
 prevT=1000
 nrfprev = 0
 P = []
+Ponerandomforest = []
 ntick = len(X.loc[:, 'Ticker'].unique())
 B = np.zeros(ntick)
 DL = pd.DataFrame(columns = range(ntick))
 predictions = pd.DataFrame(columns = range(ntick))
 portfolio = pd.DataFrame(columns=['P'], index=X.loc[((X.index>=pd.to_datetime(d1)) & (X.index<=pd.to_datetime(d2))),:].index.unique().sort_values())
+portfolionrmw = pd.DataFrame(columns=['P'], index=X.loc[((X.index>=pd.to_datetime(d1)) & (X.index<=pd.to_datetime(d2))),:].index.unique().sort_values())
+portfolioonerandomforest =  pd.DataFrame(columns=['Ponerandomforest'], index=X.loc[((X.index>=pd.to_datetime(d1)) & (X.index<=pd.to_datetime(d2))),:].index.unique().sort_values())
+yhatonerandomforest = pd.DataFrame(rfonerandomforest.predict(X.loc[((X.index>=pd.to_datetime(d1)) & (X.index < pd.to_datetime(d2))),colused]),\
+                                   index= X.loc[((X.index>=pd.to_datetime(d1)) & (X.index < pd.to_datetime(d2))),:].index)
+yhatonerandomforest['Ticker'] = X.loc[((X.index>=pd.to_datetime(d1)) & (X.index < pd.to_datetime(d2))),'Ticker']
+pt = pd.DataFrame(index =yhatonerandomforest.index.unique(), columns = yhatonerandomforest.Ticker.unique())
+
+
 j=0
-cl = np.zeros(len(rfL))
+cst = 1
 while d < pd.to_datetime(d2):
     nrfprev = nrf
     T = d - first_day
@@ -384,36 +401,41 @@ while d < pd.to_datetime(d2):
         prevT = T50
     #if nrf==1:
     T1 = d - rfL[0][0]
-        
     try:
         l = len(X.loc[d,feats].columns)
-        rp = rfL[0][1].predict(X.loc[d,feats])
-        r[0] = np.sqrt(mean_squared_error(rp, X.loc[d,'Y']))
-        if k[0] != 0: 
-            k[0] = calc_ki(lbd, k[0], r[0])
-            w[0] = np.exp(k[0]/np.sqrt(T1.days))
-        else:
+        k[0] = calc_ki(lbd, k[0], rmse[0])
+        rp = rfL[0][1].predict(X.loc[d,feats]) ##
+        rmse[0] = np.sqrt(mean_squared_error(rp, X.loc[d,'Y'])) ##
+        if w[0] != 0 : w[0] = np.exp(cst * k[0]/np.power(T1.days,0.25))
+        else: 
             w[0] = 1
-            k[0] = 1/r[0]
+            k[0] = 1/rmse[0]
+        #rp = rfL[0][1].predict(X.loc[d,feats])
+        BS =(rp / np.abs(rp).sum())
+        #r[0] = ((BS * X.loc[d,'Y'].values/100).sum() - (1/len(X.loc[d,'Y'].values)) * (X.loc[d,'Y'].values/100).sum())
+        
     except:
+        d=pd.to_datetime(d)
+        k[0] = calc_ki(lbd, k[0], rmse[0])
         rp = rfL[0][1].predict(pd.DataFrame(X.loc[d,feats].values.reshape(1,-1)))
-        r[0] = np.sqrt(mean_squared_error(rp, [X.loc[d,'Y']]))
-        if k[0] != 0: 
-            k[0] = calc_ki(lbd, k[0], r[0])
-            w[0] = np.exp(k[0]/np.sqrt(T1.days))
-        else:
+        rmse[0] = np.sqrt(mean_squared_error(rp, [X.loc[d,'Y']])) ##
+        if w[0] != 0 : w[0] = np.exp(cst * k[0]/np.power(T1.days,0.25))
+        else: 
             w[0] = 1
-            k[0] = 1/r[0]
+            k[0] = 1/rmse[0]
+        #rp = rfL[0][1].predict(pd.DataFrame(X.loc[d,feats].values.reshape(1,-1)))
+        #r[0] = ((np.sign(rp) * X.loc[d,'Y']/100) - X.loc[d,'Y']/100)
+        
     try:
-        temp2 = rfL[i][1].predict(X.loc[d,feats])
         temp = np.zeros(ntick)
-        for tick in range(ntick):
+        temp2 = rfL[0][1].predict(X.loc[d,feats].values)
+        for tick in X.loc[d,'Ticker'].sort_values():
             temp[tick] = temp2[X.loc[d,'Ticker'].values == tick].sum()
     except:
-        temp2 = rfL[i][1].predict(X.loc[d,feats].values.reshape(1, -1))
-        for tick in range(ntick):
-            temp[tick] = temp2[X.loc[d,'Ticker'] == tick].sum()
+        temp2 = rfL[0][1].predict(X.loc[d,feats].values.reshape(1, -1))
+        temp[X.loc[d,'Ticker']] = temp2
     P.append(temp)
+    
     #else:
     for i in range(1, nrf):
         T1 = d - rfL[i][0]
@@ -421,16 +443,25 @@ while d < pd.to_datetime(d2):
             try:
                 l = len(X.loc[d,feats].columns)
                 d=pd.to_datetime(d)
-                k[i] = calc_ki(lbd, k[i], r[i])
-                w[i] = np.exp(k[i]/np.sqrt(T1.days))   # w[:mn[i]].mean()# *min((d-rfL[i][0]).days/50, 1)# * w[:nrfprev].mean()  
+                
+                k[i] = calc_ki(lbd, k[i], rmse[i])
+                
+                w[i] = np.exp(cst * k[i]/np.power(T1.days,0.25)) 
+                
                 rp = rfL[i][1].predict(X.loc[d,feats])
-                r[i] = np.sqrt(mean_squared_error(rp, X.loc[d,'Y']))
+                BS =(rp / np.abs(rp).sum())
+                #r[i] = ((BS * X.loc[d,'Y'].values/100).sum() - (1/len(X.loc[d,'Y'].values)) * (X.loc[d,'Y'].values/100).sum())
+                rmse[i] = np.sqrt(mean_squared_error(rp, X.loc[d,'Y']))
             except:
                 d=pd.to_datetime(d)
-                k[i] = calc_ki(lbd, k[i], r[i])
-                w[i] = np.exp(k[i]/np.sqrt(T1.days)) # w[:mn[i]].mean() #*min((d-rfL[i][0]).days/50, 1) #* w[:nrfprev].mean()
+                
+                k[i] = calc_ki(lbd, k[i], rmse[i])
+                
+                w[i] = np.exp(cst * k[i]/np.power(T1.days,0.25))
+                
                 rp = rfL[i][1].predict(pd.DataFrame(X.loc[d,feats].values.reshape(1,-1)))
-                r[i] = np.sqrt(mean_squared_error(rp, [X.loc[d,'Y']]))
+                #r[i] = ((np.sign(rp) * X.loc[d,'Y']/100) - X.loc[d,'Y']/100)
+                rmse[i] = np.sqrt(mean_squared_error(rp, [X.loc[d,'Y']]))
         else:
             try:
                 l = len(X.loc[d,feats].columns)
@@ -438,28 +469,33 @@ while d < pd.to_datetime(d2):
                 mn[i] = int(nrfprev)
                 w[i] = 1 #w[:nrfprev].mean()
                 rp = rfL[i][1].predict(X.loc[d,feats])
-                r[i] = np.sqrt(mean_squared_error(rp, X.loc[d,'Y']))
-                k[i] = 1/r[i]
+                BS =(rp / np.abs(rp).sum())
+                #r[i] = ((BS * X.loc[d,'Y'].values/100).sum() -(1/len(X.loc[d,'Y'].values/100)) * (X.loc[d,'Y'].values/100).sum()) 
+                #k[i] = r[i]
+                rmse[i] = np.sqrt(mean_squared_error(rp, X.loc[d,'Y']))
+                k[i] = 1/rmse[i]
             except:
                 d=pd.to_datetime(d)
                 mn[i] = int(nrfprev)
                 w[i] = 1 #w[:nrfprev].mean()
                 rp = rfL[i][1].predict(pd.DataFrame(X.loc[d,feats].values.reshape(1,-1)))
-                r[i] = np.sqrt(mean_squared_error(rp, [X.loc[d,'Y']]))
-                k[i] = 1/r[i]
+                #r[i] = ((np.sign(rp) * X.loc[d,'Y']/100) - X.loc[d,'Y']/100)
+                #k[i] = r[i]
+                rmse[i] = np.sqrt(mean_squared_error(rp, [X.loc[d,'Y']]))
+                k[i] = 1/rmse[i]
         try:
-            temp2 = rfL[i][1].predict(X.loc[d,feats])
             temp = np.zeros(ntick)
-            for tick in range(ntick):
+            temp2 = rfL[i][1].predict(X.loc[d,feats])
+            for tick in X.loc[d,'Ticker'].sort_values():
                 temp[tick] = temp2[X.loc[d,'Ticker'].values == tick].sum()
         except:
             temp2 = rfL[i][1].predict(X.loc[d,feats].values.reshape(1, -1))
             temp = np.zeros(ntick)
-            for tick in range(ntick):
-                temp[tick] = temp2[X.loc[d,'Ticker'] == tick].sum()
+            temp[X.loc[d,'Ticker']] = temp2
         P.append(temp)
         
-    if d >= pd.to_datetime(d1):   
+    if d >= pd.to_datetime(d1): 
+        
         P = pd.DataFrame(P)
         predictions.loc[d, :] = (P.values * np.array([w[:nrf].tolist()]*ntick).transpose()).sum(axis=0)/w.sum()
         for tick in  range(ntick):
@@ -470,23 +506,43 @@ while d < pd.to_datetime(d2):
         D = B-S
         D[np.abs(D)<alpha] = 0
         DL.loc[d, :] = D
-        if j == 0 : c =1
-        else : c = portfolio.iloc[j-1,0]
-        wd = predictions.loc[d, :].values/predictions.loc[d, :].abs().sum()
-        ret = np.zeros(ntick)
-        if len(X.loc[d,'Y']!=ntick):
-            for tick in range(ntick):
-                ret[tick] = X.loc[((X.index==d) & (X.Ticker==tick)),'Y'].values[0]/100
+        if j == 0 :
+            c =1
+            cnrmw =1
+            conerf = 1
+        else : 
+            c = portfolio.iloc[j-1,0]
+            cnrms = portfolionrmw.iloc[j-1,0]
+            conerf = portfolioonerandomforest.iloc[j-1, 0]
+        if len(yhatonerandomforest.loc[d,'Ticker'])>0:
+            pt.loc[d, yhatonerandomforest.loc[d,'Ticker'].unique()] = yhatonerandomforest.loc[d,:].groupby(['Ticker']).sum().values.flatten()
+            pt.loc[d, pd.isnull(pt.loc[d,:])]=0
         else:
-            ret = X.loc[d,'Y']/100
+            pt.loc[d,:]=0
+        wd = predictions.loc[d, :].values/predictions.loc[d, :].abs().sum()
+        wdnrmw = (P.values/P.abs().sum(axis=0).values)
+        wdonerf = pt.loc[d,:].values/pt.loc[d,:].abs().sum()
+        ret = np.zeros(ntick)
+        for tick in X.loc[d,:].Ticker.unique():
+            ret[tick] = X.loc[((X.index==d) & (X.Ticker==tick)),'Y'].values[0]/100
         profit = (wd * c * ret).sum()
+        profitnrmw = (wdnrmw * cnrmw * ret).sum()
+        profitonerf = (wdonerf *conerf * ret).sum()
         portfolio.iloc[j, 0] = c+profit
+        portfolionrmw.iloc[j,0] = cnrmw + profitnrmw # This is the profit for our trading strategy without equally weighted random forests and no risk management
+        portfolioonerandomforest.iloc[j,0] = conerf + profitonerf
         j+=1
+    
     w0.append(w[0])
-    w1.append(w[10])
-    w2.append(w[20])
-    w3.append(w[70])
-    w4.append(w[79])
+    w1.append(w[1])
+    w2.append(w[3])
+    w3.append(w[5])
+    w4.append(w[8])
+    w5.append(w[11])
+    w6.append(w[20])
+    w7.append(w[29])
+    w8.append(w[38])
+    w9.append(w[47])
     #print(w[0], w[1], w[5], w[10], w[15])
     P=[]
     try:
@@ -498,11 +554,16 @@ while d < pd.to_datetime(d2):
 xa=range(len(w0))
 plt.figure(figsize=(15,15))
 plt.plot(xa, w0, label='1')
-plt.plot(xa, w1, label='2')
+#plt.plot(xa, w1, label='2')
 plt.plot(xa, w2, label='3')
-plt.plot(xa, w3, label='4')
+#plt.plot(xa, w3, label='4')
 plt.plot(xa, w4, label='5')
-#plt.ylim(0.99, 1.05)
+#plt.plot(xa, w5, label='6')
+plt.plot(xa, w6, label='7')
+#plt.plot(xa, w7, label='8')
+plt.plot(xa, w8, label='9')
+#plt.plot(xa, w9, label='10')
+
 plt.legend()
 plt.show()
 
@@ -549,7 +610,10 @@ j=0
 while d < pd.to_datetime(d2):
     if j == 0 : c =1
     else : c = portfolio.iloc[j-1,0]
-    wd = predictions.loc[d, :].values/predictions.loc[d, :].abs().sum()
+    if predictions.loc[d, :].abs().sum() != 0:
+        wd = predictions.loc[d, :].values/predictions.loc[d, :].abs().sum()
+    else:
+        wd = 0
     ret = np.zeros(ntick)
     if len(X.loc[d,'Y']!=ntick):
         for tick in range(ntick):
