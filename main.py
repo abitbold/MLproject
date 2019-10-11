@@ -17,14 +17,15 @@ def get_random_tickers(n, ticklist):
     return np.random.choice(ticklist, size=n, replace=False)
 RSVE = []
 
-# Our initial ticklist
 
+# Our initial ticklist
+cv_trees=False
 ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BEI.DE', 'BMW.DE', 'CON.DE', 'DAI.DE', 'DBK.DE', 'DTE.DE', 'EOAN.DE', 'FME.DE',
  'FRE.DE', 'HEI.DE', 'HEN3.DE', 'LHA.DE', 'LIN.DE', 'MRK.DE', 'MUV2.DE', 'RWE.DE', 'SAP.DE', 'SIE.DE', 'TKA.DE', 'VOW3.DE']
 
 # The 7 tickers chosen randomly from this ticklist
 
-ticklist = get_random_tickers(7, ticklist)
+ticklist = get_random_tickers(10, ticklist)
 #ticklist = ['LIN.DE', 'HEN3.DE', 'DAI.DE', 'FME.DE', 'MUV2.DE', 'SIE.DE', 'DBK.DE']
 
 print(ticklist)
@@ -124,22 +125,20 @@ Ytrain1 = X.loc[((X.index>pd.to_datetime(d0)) & (X.index<=pd.to_datetime(d1))), 
 Ycv1 = X.loc[((X.index>pd.to_datetime(d1)) & (X.index<=pd.to_datetime(d2))), 'Y']
 
 
-#Code for cross validating number of trees
-
-oob = []
-
-xa = []
-
-for i in range(1, 300):
-    print(i)
-    rf = RandomForestRegressor(n_estimators=i, oob_score=True).fit(Xtrain1, Ytrain1)
-    oob.append(1 - rf.oob_score_)
-    xa.append(i)
-plt.figure(figsize=(10,10))
-plt.scatter(xa, oob)
-plt.xlabel('Number of trees')
-plt.ylabel('OOB error')
-plt.title('Number of trees cross validation')
+if cv_trees:
+    #Code for cross validating number of trees
+    oob = []
+    xa = []
+    for i in range(1, 300):
+        print(i)
+        rf = RandomForestRegressor(n_estimators=i, oob_score=True).fit(Xtrain1, Ytrain1)
+        oob.append(1 - rf.oob_score_)
+        xa.append(i)
+    plt.figure(figsize=(10,10))
+    plt.scatter(xa, oob)
+    plt.xlabel('Number of trees')
+    plt.ylabel('OOB error')
+    plt.title('Number of trees cross validation')
 #--> 100 tress seem enough
 
 
@@ -527,7 +526,6 @@ daxrcv = (dax.loc[dax.index[dax.index<t2][-1], 'Close']/dax.loc[dax.index[dax.in
 daxrtest = (dax.loc[dax.index[dax.index<t3][-1], 'Close']/dax.loc[dax.index[dax.index>=t2][0], 'Close'])**(1/(t3.year-t2.year))-1
 
 ## Print the table of results for cross validation data
-
 dfcv.loc['Buy and Hold', 'Annualized return'] = (1+holdcv)**(1/(t2.year-t1.year))-1
 dfcv.loc['One RF', 'Annualized return'] = ((1+(portfolioonerandomforest.loc[trd2,:].values - portfolioonerandomforest.loc[trd1,:].values)/portfolioonerandomforest.loc[trd1,:].values)**(1/(t2.year-t1.year)))[0]-1
 dfcv.loc['Model', 'Annualized return'] = ((1+(portfolio.loc[trd2,:].values - portfolio.loc[trd1,:].values)/portfolio.loc[trd1,:].values)**(1/(t2.year-t1.year)))[0]-1
@@ -540,15 +538,15 @@ dfcv.loc['Model no weight', 'Vol'] = np.sqrt(365/meants)*((portfolionw.loc[t1:t2
 dfcv.loc['Model no risk management', 'Vol'] = np.sqrt(365/meants)*((portfolionr.loc[t1:t2,:].values[1:]/portfolionr.loc[t1:t2,:].values[0:-1])-1).std()
 dfcv.loc['Basic seasonality', 'Vol'] = np.sqrt(365/meants)*((portfoliobasic.loc[t1:t2,:].values[1:]/portfoliobasic.loc[t1:t2,:].values[0:-1])-1).std()
 dfcv.loc['Buy and Hold', 'Vol'] = np.sqrt(365)*((portfolioBH.loc[t1:t2,:].values[1:]/portfolioBH.loc[t1:t2,:].values[0:-1])-1).std()
-dfcv.loc[:, 'Sharpe Ratio'] = (dfcv.loc[:,'Annualized return'] - daxrcv)/dfcv.loc[:,'Vol']
+dfcv.loc[:, 'Sharpe Ratio'] = (dfcv.loc[:,'Annualized return'])/dfcv.loc[:,'Vol']
 dfcv.loc['Model', 'RMSE'] = np.sqrt(mean_squared_error(predictions.loc[((predictions.index>=t1) &(predictions.index<t2)), :], XP.loc[((XP.index>=t1)& (XP.index<t2)),:]))
 dfcv.loc['Model no risk management', 'RMSE'] = np.sqrt(mean_squared_error(predictions.loc[((predictions.index>=t1) &(predictions.index<t2)), :], XP.loc[((XP.index>=t1)& (XP.index<t2)),:]))
 dfcv.loc['Model no weight', 'RMSE'] = np.sqrt(mean_squared_error(predictionsnw.loc[((predictionsnw.index>=t1) &(predictionsnw.index<t2)), :], XP.loc[((XP.index>=t1)& (XP.index<t2)),:]))
 dfcv.loc['One RF', 'RMSE'] = np.sqrt(mean_squared_error(rfonerandomforest.predict(X.loc[((X.index>=pd.to_datetime(d1)) & (X.index < pd.to_datetime(d2))),colused]), 
                                                         X.loc[((X.index>=pd.to_datetime(d1)) & (X.index < pd.to_datetime(d2))),'Y']))
 
-## Print the table of results for test data
 
+## Print the table of results for test data
 dftest.loc['Buy and Hold', 'Annualized return'] = (1+holdtest)**(1/(t3.year-t2.year))-1
 dftest.loc['One RF', 'Annualized return'] = ((1+(portfolioonerandomforest.loc[trd3,:].values - portfolioonerandomforest.loc[trd2,:].values)/portfolioonerandomforest.loc[trd2,:].values)**(1/(t3.year-t2.year)))[0]-1
 dftest.loc['Model', 'Annualized return'] = ((1+(portfolio.loc[trd3,:].values - portfolio.loc[trd2,:].values)/portfolio.loc[trd2,:].values)**(1/(t3.year-t2.year)))[0]-1
@@ -561,7 +559,7 @@ dftest.loc['Model no weight', 'Vol'] = np.sqrt(365/meants)*((portfolionw.loc[t2:
 dftest.loc['Model no risk management', 'Vol'] = np.sqrt(365/meants)*((portfolionr.loc[t2:t3,:].values[1:]/portfolionr.loc[t2:t3,:].values[0:-1])-1).std()
 dftest.loc['Basic seasonality', 'Vol'] = np.sqrt(365/meants)*((portfoliobasic.loc[t2:t3,:].values[1:]/portfoliobasic.loc[t2:t3,:].values[0:-1])-1).std()
 dftest.loc['Buy and Hold', 'Vol'] = np.sqrt(365)*((portfolioBH.loc[t2:t3,:].values[1:]/portfolioBH.loc[t2:t3,:].values[0:-1])-1).std()
-dftest.loc[:, 'Sharpe Ratio'] = (dftest.loc[:,'Annualized return'] - daxrtest)/dfcv.loc[:,'Vol']
+dftest.loc[:, 'Sharpe Ratio'] = (dftest.loc[:,'Annualized return'])/dftest.loc[:,'Vol']
 dftest.loc['Model', 'RMSE'] = np.sqrt(mean_squared_error(predictions.loc[((predictions.index>=t2) &(predictions.index<t3)), :], XP.loc[((XP.index>=t2)& (XP.index<t3)),:]))
 dftest.loc['Model no risk management', 'RMSE'] = np.sqrt(mean_squared_error(predictions.loc[((predictions.index>=t2) &(predictions.index<t3)), :], XP.loc[((XP.index>=t2)& (XP.index<t3)),:]))
 dftest.loc['Model no weight', 'RMSE'] = np.sqrt(mean_squared_error(predictionsnw.loc[((predictionsnw.index>=t2) &(predictionsnw.index<t3)), :], XP.loc[((XP.index>=t2)& (XP.index<t3)),:]))
