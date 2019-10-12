@@ -37,7 +37,27 @@ class MLP(nn.Module):
     def forward(self, x):
         return self.net(x)
 
+class RNN(nn.Module):
+    def __init__(self, size_list):
+        super(RNN, self).__init__()
+        self.rnn = nn.LSTM(         # if use nn.RNN(), it hardly learns
+            input_size=size_list[0],
+            hidden_size=size_list[1],         # rnn hidden unit
+            num_layers=len(size_list)-2,           # number of rnn layer
+            )
 
+        self.out = nn.Linear(size_list[-2], size_list[-1])
+
+        
+
+    def forward(self, x):
+        
+        r_out, (h_n, h_c) = self.rnn(x, None)   # None represents zero initial hidden state
+
+        # choose r_out at the last time step
+        out = self.out(r_out[:, -1, :])
+        return out
+    
 
 def train_epoch(model, optimizer, X_train, y_train, criterion):
     model.train()
@@ -70,7 +90,13 @@ def nnTrain(X_train, y_train, size_list, dropout = False, dropoutProb = 0.1, bat
 
     X_train = torch.autograd.Variable(torch.Tensor(X_train.values.astype(float)))
     y_train = torch.autograd.Variable(torch.Tensor(y_train.values.astype(float)))
-    model = MLP(size_list)
+    
+    if LSTM == True:
+        X_train = X_train.view(-1, X_train.shape[0], X_train.shape[1])
+        model = RNN(size_list)
+    else:
+        model = MLP(size_list, dropout, dropoutProb, batchNorm)
+    
     
     criterion = nn.MSELoss()
     
@@ -94,6 +120,10 @@ def nnTest(model, X_test, y_test):
     X_test = torch.autograd.Variable(torch.Tensor(X_test.values.astype(float)))
     y_test = torch.autograd.Variable(torch.Tensor(y_test.values.astype(float)))
     criterion = nn.MSELoss()
+    
+    if hasattr(model, 'rnn'):
+        X_test = X_test.view(-1, X_test.shape[0], X_test.shape[1])
+    
     with torch.no_grad():
         model.eval()        
 
@@ -106,6 +136,10 @@ def nnTest(model, X_test, y_test):
     
 def nnPredict(model, X_test):
     X_test = torch.autograd.Variable(torch.Tensor(X_test.values.astype(float)))
+    
+    if hasattr(model, 'rnn'):
+        X_test = X_test.view(-1, X_test.shape[0], X_test.shape[1])
+    
     with torch.no_grad():
         model.eval()        
         outputs = model(X_test)
