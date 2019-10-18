@@ -25,7 +25,7 @@ ticklist = ['ADS.DE', 'ALV.DE', 'BAS.DE', 'BEI.DE', 'BMW.DE', 'CON.DE', 'DAI.DE'
 
 # The 7 tickers chosen randomly from this ticklist
 
-ticklist = get_random_tickers(10, ticklist)
+ticklist = get_random_tickers(7, ticklist)
 #ticklist = ['LIN.DE', 'HEN3.DE', 'DAI.DE', 'FME.DE', 'MUV2.DE', 'SIE.DE', 'DBK.DE']
 
 print(ticklist)
@@ -37,7 +37,7 @@ d2 = '2006-01-01' # begining of the test period
 d3 = '2008-01-01' # end of the test period
 
 norm=True
-lbd = 0.2 # history weight metric
+lbd = 0.1 # history weight metric
 alpha = 0.09 # risk management metric
 cst = 10 #weight metric
 delta = 0.91
